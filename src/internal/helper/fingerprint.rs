@@ -1,4 +1,3 @@
-use regex::Regex;
 use reqwest::Response;
 
 #[derive(Debug)]
@@ -8,6 +7,7 @@ struct Rule {
     product: String,
 }
 
+#[derive(Debug)]
 struct Configs {
     user_agent: String,
     timeout: u64,
@@ -21,4 +21,35 @@ pub fn parse(resp: &Response, rule_val: &str) -> bool {
 
 fn check_one(resp: &Response, rule_val: &str) -> bool {
     false
+}
+
+fn fingerprint(ip: &str, port: u16, config: &Configs) -> Option<String> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(config.timeout))
+        .build().unwrap();
+
+    let mut req_dict: HashMap<String, Response> = HashMap::new();
+
+    for rule in &config.rules {
+        let url = format!("http://{}:{}/{}", ip, port, rule.path);
+        if req.contains_key(&url) {
+            match client.get(&url).header("User-Agent", &config.user_agent).send() {
+                Ok(req) => {
+                    if req.status().is_success() {
+                        req_dict.insert(rule.path.clone(), req);
+                    }
+                },
+                Err(e) => {
+                    continue;
+                }
+            }
+        }
+
+        if let Some(req) = req_dict.get(&rule.path) {
+            if parse(resp, &rule_val) {
+                return Some(rule.product.clone());
+            }
+        }
+    }
+    None
 }
