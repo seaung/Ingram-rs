@@ -1,1 +1,2 @@
-mod pocs;
+pub mod pocs;
+pub mod cmd;
