@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::time::Duration;
 use reqwest::Response;
 
 #[derive(Debug)]
@@ -32,7 +34,7 @@ fn fingerprint(ip: &str, port: u16, config: &Configs) -> Option<String> {
 
     for rule in &config.rules {
         let url = format!("http://{}:{}/{}", ip, port, rule.path);
-        if req.contains_key(&url) {
+        if rule.contains_key(&url) {
             match client.get(&url).header("User-Agent", &config.user_agent).send() {
                 Ok(req) => {
                     if req.status().is_success() {
@@ -46,7 +48,7 @@ fn fingerprint(ip: &str, port: u16, config: &Configs) -> Option<String> {
         }
 
         if let Some(req) = req_dict.get(&rule.path) {
-            if parse(resp, &rule_val) {
+            if parse(rule, &req_dict) {
                 return Some(rule.product.clone());
             }
         }
